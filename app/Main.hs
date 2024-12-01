@@ -10,7 +10,9 @@ main = do
   let parsed = parseLines f
   let sorted = sortLines parsed
   let dist = totalDist sorted
-  print sorted
+  let sim = similarity sorted
+  print sim
+  -- print sorted
   print dist
 
 merge :: [a] -> [a] -> [a]
@@ -44,7 +46,7 @@ filterLines [v] = [[head q, last $ init q]]
     q = splitLine v
 filterLines (v : rest) = filterLines [v] ++ filterLines rest
 
-parseLines :: [[[Char]]] -> ([Integer], [Integer])
+parseLines :: [[[Char]]] -> ([Int], [Int])
 parseLines [] = ([], [])
 parseLines [v] = ([read $ head v], [read $ head $ tail v])
 parseLines (v : rest) = (merge (fst o) (fst o2), merge (snd o) (snd o2))
@@ -52,11 +54,18 @@ parseLines (v : rest) = (merge (fst o) (fst o2), merge (snd o) (snd o2))
     o = parseLines [v]
     o2 = parseLines rest
 
-sortLines :: ([Integer], [Integer]) -> ([Integer], [Integer])
+sortLines :: ([Int], [Int]) -> ([Int], [Int])
 sortLines (v1, v2) = (sort v1, sort v2)
 
-totalDist :: ([Integer], [Integer]) -> Integer
+totalDist :: ([Int], [Int]) -> Int
 totalDist (_, []) = undefined
 totalDist ([], _) = undefined
-totalDist ([v1], [v2]) = abs v2 - v1
+totalDist ([v1], [v2]) = abs (v2 - v1)
 totalDist (v1 : rest1, v2 : rest2) = abs v2 - v1 + totalDist (rest1, rest2)
+
+count :: (Eq a) => a -> [a] -> Int
+count x = length . filter (x ==)
+
+similarity :: ([Int], [Int]) -> Int
+similarity ([], _) = 0
+similarity (e : rest, other) = (count e other) * e + similarity (rest, other)
