@@ -7,7 +7,7 @@ main = do
   let f = filterLines v
   let parsed = parseLines f
   let list = [x | x <- parsed, lineGoodErrors x]
-  print list
+  -- print list
   print $ length list
 
 splitLine :: [Char] -> [[Char]]
