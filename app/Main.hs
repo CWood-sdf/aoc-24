@@ -1,29 +1,14 @@
 module Main where
 
-import Data.List
-
 main :: IO ()
 main = do
-  s <- readFile "day1.txt"
+  s <- readFile "day2.txt"
   let v = splitLines s
   let f = filterLines v
   let parsed = parseLines f
-  let sorted = sortLines parsed
-  let dist = totalDist sorted
-  let sim = similarity sorted
-  print sim
-  -- print sorted
-  print dist
-
-merge :: [a] -> [a] -> [a]
-merge xs [] = xs
-merge [] ys = ys
-merge (x : xs) (y : ys) = x : y : merge xs ys
-
-concatList :: [a] -> [a] -> [a]
-concatList xs [] = xs
-concatList [] ys = ys
-concatList (x : xs) ys = x : concatList xs ys
+  let list = [x | x <- parsed, lineGoodErrors x]
+  print list
+  print $ length list
 
 splitLine :: [Char] -> [[Char]]
 splitLine v = case break (== ' ') v of
@@ -41,31 +26,45 @@ splitLines v = case break (== '\n') v of
 
 filterLines :: [[Char]] -> [[[Char]]]
 filterLines [] = []
-filterLines [v] = [[head q, last $ init q]]
+filterLines [v] = [[x | x <- q, x /= " " && x /= ""]]
   where
     q = splitLine v
 filterLines (v : rest) = filterLines [v] ++ filterLines rest
 
-parseLines :: [[[Char]]] -> ([Int], [Int])
-parseLines [] = ([], [])
-parseLines [v] = ([read $ head v], [read $ head $ tail v])
-parseLines (v : rest) = (merge (fst o) (fst o2), merge (snd o) (snd o2))
+parseLines :: [[[Char]]] -> [[Int]]
+parseLines [] = []
+parseLines [v] = [[read q :: Int | q <- v]]
+parseLines (v : rest) = o ++ o2
   where
     o = parseLines [v]
     o2 = parseLines rest
 
-sortLines :: ([Int], [Int]) -> ([Int], [Int])
-sortLines (v1, v2) = (sort v1, sort v2)
+isGood :: Int -> Int -> Bool -> Bool
+isGood v1 v2 desc = (v1 < v2) == desc && abs (v2 - v1) <= 3 && abs (v2 - v1) >= 1
 
-totalDist :: ([Int], [Int]) -> Int
-totalDist (_, []) = undefined
-totalDist ([], _) = undefined
-totalDist ([v1], [v2]) = abs (v2 - v1)
-totalDist (v1 : rest1, v2 : rest2) = abs v2 - v1 + totalDist (rest1, rest2)
+lineGoodSub :: [Int] -> Bool -> Bool
+lineGoodSub [] _ = True
+lineGoodSub [_] _ = True
+lineGoodSub (v : rest) q =
+  isGood v (head rest) q && lineGoodSub rest q
 
-count :: (Eq a) => a -> [a] -> Int
-count x = length . filter (x ==)
+lineGood :: [Int] -> Bool
+lineGood [] = True
+lineGood v = lineGoodSub v (head v < head (tail v))
 
-similarity :: ([Int], [Int]) -> Int
-similarity ([], _) = 0
-similarity (e : rest, other) = (count e other) * e + similarity (rest, other)
+b2i :: Bool -> Int
+b2i True = 1
+b2i False = 0
+
+removeIndex :: [a] -> Int -> [a]
+removeIndex [] _ = []
+removeIndex (i : list) v | v > 0 = i : removeIndex list (v - 1)
+removeIndex (_ : rest) v | v == 0 = rest
+removeIndex (i : list) _ = i : list
+
+goodWithRemoval :: [Int] -> Int -> Bool
+goodWithRemoval list i | i >= length list = False
+goodWithRemoval list i = lineGood (removeIndex list i) || goodWithRemoval list (i + 1)
+
+lineGoodErrors :: [Int] -> Bool
+lineGoodErrors list = lineGood list || goodWithRemoval list 0
